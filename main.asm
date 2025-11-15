@@ -2,7 +2,10 @@ INCLUDE "hardware.inc"
 
 DEF BRICK_LEFT EQU $05
 DEF BRICK_RIGHT EQU $06
+DEF DIGIT_OFFSET EQU $1A
 DEF BLANK_TILE EQU $08
+DEF SCORE_TENS   EQU $9870
+DEF SCORE_ONES   EQU $9871
 
 SECTION "header", ROM0[$100]
 
@@ -91,6 +94,9 @@ ClearOam:
     ; Initialize global variables
     ld a, 0
     ld [wFrameCounter], a
+    ld [wCurKeys], a
+    ld [wNewKeys], a
+    ld [wScore], a
 
 Main:
     ld a, [rLY]
@@ -180,6 +186,7 @@ BounceDone:
     ld a, [_OAMRAM]
     ld b, a
     ld a, [_OAMRAM + 4]
+    add a, $4
     cp a, b
     jp nz, PaddleBounceDone ; If the ball isn't at the same Y position as the paddle, it can't bounce.
     ; Now let's compare the X positions of the objects to see if they're touching.
@@ -340,6 +347,7 @@ CheckAndHandleBrick:
     ld [hl], BLANK_TILE
     inc hl
     ld [hl], BLANK_TILE
+		call IncreaseScorePackedBCD
 CheckAndHandleBrickRight:
     cp a, BRICK_RIGHT
     ret nz
@@ -347,6 +355,32 @@ CheckAndHandleBrickRight:
     ld [hl], BLANK_TILE
     dec hl
     ld [hl], BLANK_TILE
+		call IncreaseScorePackedBCD
+    ret
+
+; Increase score by 1 and store it as a 1 byte packed BCD number
+; changes A and HL
+IncreaseScorePackedBCD:
+    xor a               ; clear carry flag and a
+    inc a               ; a = 1
+    ld hl, wScore       ; load score
+    adc [hl]            ; add 1
+    daa                 ; convert to BCD
+    ld [hl], a          ; store score
+    call UpdateScoreBoard
+    ret
+		; Read the packed BCD score from wScore and updates the score display
+UpdateScoreBoard:
+    ld a, [wScore]      ; Get the Packed score
+    and %11110000       ; Mask the lower nibble
+    swap a              ; Move the upper nibble to the lower nibble (divide by 16)
+    add a, DIGIT_OFFSET ; Offset + add to get the digit tile
+    ld [SCORE_TENS], a  ; Show the digit on screen
+
+    ld a, [wScore]      ; Get the packed score again
+    and %00001111       ; Mask the upper nibble
+    add a, DIGIT_OFFSET ; Offset + add to get the digit tile again
+    ld [SCORE_ONES], a  ; Show the digit on screen
     ret
 Tiles:
 	dw `33333333
@@ -583,6 +617,97 @@ Tiles:
 	dw `00000000
 	dw `00000000
 
+; digits
+	; 0
+	dw `33333333
+	dw `33000033
+	dw `30033003
+	dw `30033003
+	dw `30033003
+	dw `30033003
+	dw `33000033
+	dw `33333333
+	; 1
+	dw `33333333
+	dw `33300333
+	dw `33000333
+	dw `33300333
+	dw `33300333
+	dw `33300333
+	dw `33000033
+	dw `33333333
+	; 2
+	dw `33333333
+	dw `33000033
+	dw `30330003
+	dw `33330003
+	dw `33000333
+	dw `30003333
+	dw `30000003
+	dw `33333333
+	; 3
+	dw `33333333
+	dw `30000033
+	dw `33330003
+	dw `33000033
+	dw `33330003
+	dw `33330003
+	dw `30000033
+	dw `33333333
+	; 4
+	dw `33333333
+  dw `33000033
+  dw `30030033
+  dw `30330033
+  dw `30330033
+  dw `30000003
+  dw `33330033
+  dw `33333333
+  ; 5
+  dw `33333333
+  dw `30000033
+  dw `30033333
+  dw `30000033
+  dw `33330003
+  dw `30330003
+  dw `33000033
+  dw `33333333
+  ; 6
+  dw `33333333
+  dw `33000033
+  dw `30033333
+  dw `30000033
+  dw `30033003
+  dw `30033003
+  dw `33000033
+  dw `33333333
+  ; 7
+  dw `33333333
+  dw `30000003
+  dw `33333003
+  dw `33330033
+  dw `33300333
+  dw `33000333
+  dw `33000333
+  dw `33333333
+  ; 8
+  dw `33333333
+  dw `33000033
+  dw `30333003
+  dw `33000033
+  dw `30333003
+  dw `30333003
+  dw `33000033
+  dw `33333333
+  ; 9
+  dw `33333333
+  dw `33000033
+  dw `30330003
+  dw `30330003
+  dw `33000003
+  dw `33330003
+  dw `33000033
+  dw `33333333
 TilesEnd:
 
 Tilemap:
@@ -638,3 +763,6 @@ wNewKeys: db
 SECTION "Ball Data", WRAM0
 wBallMomentumX: db
 wBallMomentumY: db
+
+SECTION "Score", WRAM0
+wScore: db
