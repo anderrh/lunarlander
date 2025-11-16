@@ -307,42 +307,23 @@ UpdateScoreBoard:
     ld [SCORE_ONES], a  ; Show the digit on screen
     ret
 getlandercostume:
-    ld b, -115
-    call s_cmp_ab
-    ld b, 0
-    ret c
-    ld b, -32
-    call s_cmp_ab
-    ld b, 1
-    ret c
-    ld b, 32
-    call s_cmp_ab
+    cp a, 32
     ld b, 2
     ret c
-    cp a, 115
+    cp a, 96
     ld b, 3
     ret c
+    cp a, 128
     ld b, 4
+    ret c
+    cp a, 160
+    ld b, 0
+    ret c
+    cp a,224
+    ld b, 1
+    ret c
+    ld b, 2
     ret
-
-; Signed Compare A with B (A vs B)
-; Sets flags as if a signed CP B was executed
-; Does not modify A or B
-s_cmp_ab:
-    push af         ; Store A and flags
-    push bc         ; Store B (and flags from the push, which we don't care about)
-
-    xor a, $80      ; Flip the sign bit of A
-    ld b, a         ; Move modified A to B
-    pop af          ; Restore original B to A, flags restored too (irrelevant)
-    xor a, $80      ; Flip the sign bit of B (now in A)
-    ; A now holds original B with flipped sign bit
-
-    cp b            ; Compare modified B (in A) with modified A (in B)
-    ; Flags (Z, C) are now set correctly for a signed comparison A vs B
-
-    pop af          ; Restore original A to A
-    ret             ; Return, flags are preserved from the 'cp b' instruction
 
 
 Tiles:
