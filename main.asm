@@ -358,8 +358,14 @@ Thrust:
     ld h, a 
 
     ; Put sin / 32 is in de. The high byte is zero.
-    ld d, 0
-    ; Do a 16 bit add to add the sine / 32 to hl
+    ld d, $ff ; load 0 into d and then do the complement to get $ff
+
+    ld a, e
+    cpl
+    ld e, a ; take the complement of e
+
+    inc de ; add one to the complement
+    ; Do a 16 bit add of the complement and 1 to subtract the sine / 32 from hl
     add hl, de
 
     ; put hl into wLanderMomentumY
