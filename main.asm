@@ -63,9 +63,9 @@ ClearOam:
     ld [hli], a
 
     ; The Lander starts out going up and to the right
-    ld a, 64
+    ld a, 0
     ld [wLanderMomentumX], a
-    ld a, 16
+    ld a, 0
     ld [wLanderMomentumY], a
     ld a, 0 ; -1 if going left, 0 if going right
     ld [wLanderMomentumX+1], a
@@ -79,6 +79,8 @@ ClearOam:
     ld [wLanderY], a
     ld a, (32)
     ld [wLanderY+1], a
+    ld a, (0)
+    ld [wLanderAngle], a
 
     ; Turn the LCD on
     ld a, LCDCF_ON | LCDCF_BGON | LCDCF_OBJON
@@ -105,36 +107,6 @@ WaitVBlank2:
     cp 144
     jp c, WaitVBlank2
 
-    ; ld a, [wLanderX]
-    ; ld h, a
-    ; ld a, [wLanderX+1]
-    ; ld l, a
-    ; ld a, [wLanderMomentumX]
-    ; ld d, a
-    ; ld a, [wLanderMomentumX+1]
-    ; ld e, a
-    ; add hl, de
-    ; ld a, h
-    ; ld [wLanderX+1], a
-    ; ld a, l
-    ; ld [wLanderX], a
-    ; ld [_OAMRAM+1], a
-
-    ; ld a, [wLanderY]
-    ; ld h, a
-    ; ld a, [wLanderY+1]
-    ; ld l, a
-    ; ld a, [wLanderMomentumY]
-    ; ld d, a
-    ; ld a, [wLanderMomentumY+1]
-    ; ld e, a
-    ; add hl, de
-    ; ld a, h
-    ; ld [wLanderY+1], a
-    ; ld a, l
-    ; ld [wLanderY], a
-    ; ld [_OAMRAM], a
-
     ; Add the Lander's momentum to its position in OAM.
     ld a, [wLanderMomentumX+1]
     ld c, a
@@ -152,6 +124,10 @@ WaitVBlank2:
     ; Use the de-scaled low byte as the backgrounds position
     ld a, c
     ld [_OAMRAM+1], a
+    ld a, [wLanderAngle]  
+    call getlandercostume
+    ld a, b
+    ld [_OAMRAM+2], a
 
     ld a, [wLanderMomentumY+1]
     ld c, a
@@ -174,7 +150,6 @@ WaitVBlank2:
 
     ; Check the current keys every frame and move left or right.
     call UpdateKeys
-    jp Main
 
     ; First, check if the left button is pressed.
 CheckLeft:
@@ -182,13 +157,14 @@ CheckLeft:
     and a, PADF_LEFT
     jp z, CheckRight
 Left:
-    ; Move the paddle one pixel to the left.
-    ld a, [_OAMRAM + 1]
-    dec a
-    ; If we've already hit the edge of the playfield, don't move.
-    cp a, 15
+    ; Move the angle one unit to the left.
+    ld a, [wLanderAngle]
+    
+    ; If we've already turned to -180, don't move.
+    cp a, -128
     jp z, Main
-    ld [_OAMRAM + 1], a
+    dec a
+    ld [wLanderAngle], a
     jp Main
 
 ; Then check the right button.
@@ -197,13 +173,13 @@ CheckRight:
     and a, PADF_RIGHT
     jp z, Main
 Right:
-    ; Move the paddle one pixel to the right.
-    ld a, [_OAMRAM + 1]
-    inc a
-    ; If we've already hit the edge of the playfield, don't move.
-    cp a, 105
+    ; Move the angle one unit to the right.
+    ld a, [wLanderAngle]
+    ; If we've already turned to 127, don't move.
+    cp a, 127
     jp z, Main
-    ld [_OAMRAM + 1], a
+    inc a
+    ld [wLanderAngle], a
     jp Main
 
 ; Copy bytes from one area to another.
@@ -330,6 +306,45 @@ UpdateScoreBoard:
     add a, DIGIT_OFFSET ; Offset + add to get the digit tile again
     ld [SCORE_ONES], a  ; Show the digit on screen
     ret
+getlandercostume:
+    ld b, -115
+    call s_cmp_ab
+    ld b, 0
+    ret c
+    ld b, -32
+    call s_cmp_ab
+    ld b, 1
+    ret c
+    ld b, 32
+    call s_cmp_ab
+    ld b, 2
+    ret c
+    cp a, 115
+    ld b, 3
+    ret c
+    ld b, 4
+    ret
+
+; Signed Compare A with B (A vs B)
+; Sets flags as if a signed CP B was executed
+; Does not modify A or B
+s_cmp_ab:
+    push af         ; Store A and flags
+    push bc         ; Store B (and flags from the push, which we don't care about)
+
+    xor a, $80      ; Flip the sign bit of A
+    ld b, a         ; Move modified A to B
+    pop af          ; Restore original B to A, flags restored too (irrelevant)
+    xor a, $80      ; Flip the sign bit of B (now in A)
+    ; A now holds original B with flipped sign bit
+
+    cp b            ; Compare modified B (in A) with modified A (in B)
+    ; Flags (Z, C) are now set correctly for a signed comparison A vs B
+
+    pop af          ; Restore original A to A
+    ret             ; Return, flags are preserved from the 'cp b' instruction
+
+
 Tiles:
 ; moon surface
   ; space
@@ -510,7 +525,7 @@ Tilemap:
 	db $00, $01, $00, $01, $02, $01, $01, $02, $00, $01, $02, $01, $00, $02, $01, $00, $01, $02, $01, $00, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $01, $01, $02, $01, $02, $01, $02, $01, $01, $01, $00, $01, $02, $02, $00, $01, $02, $00, $02, $02, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $00, $01, $00, $01, $01, $02, $00, $02, $01, $02, $01, $02, $01, $02, $01, $00, $01, $01, $01, $01, 0,0,0,0,0,0,0,0,0,0,0,0
-	db $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
+	db $05, $04, $04, $04, $04, $04, $04, $03, $03, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $05, $04, $04, $04, $04, $04, $05, $04, $04, $04, $05, $04, $04, $04, $04, $04, $04, $05, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $04, $04, $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $04, $04, $05, $04, $04, $04, $05, $04, $04, $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
@@ -578,6 +593,7 @@ wLanderMomentumX: dw
 wLanderMomentumY: dw
 wLanderX: dw
 wLanderY: dw
+wLanderAngle:db
 
 SECTION "Score", WRAM0
 wScore: db
