@@ -150,6 +150,8 @@ WaitVBlank2:
     ; Check the current keys every frame and move left or right.
     call UpdateKeys
 
+    
+
     ; First, check if the left button is pressed.
 CheckLeft:
     ld a, [wCurKeys]
@@ -161,24 +163,32 @@ Left:
     
     ; If we've already turned to -180, don't move.
     cp a, -128
-    jp z, Main
+    jp z, CheckA
     dec a
     ld [wLanderAngle], a
-    jp Main
+    jp CheckA
 
 ; Then check the right button.
 CheckRight:
     ld a, [wCurKeys]
     and a, PADF_RIGHT
-    jp z, Main
+    jp z, CheckA
 Right:
     ; Move the angle one unit to the right.
     ld a, [wLanderAngle]
     ; If we've already turned to 127, don't move.
     cp a, 127
-    jp z, Main
+    jp z, CheckA
     inc a
     ld [wLanderAngle], a
+    jp CheckA
+CheckA:
+    ld a,[wCurKeys]
+    and a, PADF_A
+    jp z, Aend
+    As:
+    call Thrust
+    Aend:
     jp Main
 
 ; Copy bytes from one area to another.
@@ -323,6 +333,8 @@ getlandercostume:
     srl a
     srl a
     srl a
+    ret
+Thrust:
     ret
 CosTable:
     db $ff
