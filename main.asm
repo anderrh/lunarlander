@@ -126,7 +126,6 @@ WaitVBlank2:
     ld [_OAMRAM+1], a
     ld a, [wLanderAngle]  
     call getlandercostume
-    ld a, b
     ld [_OAMRAM+2], a
 
     ld a, [wLanderMomentumY+1]
@@ -307,25 +306,54 @@ UpdateScoreBoard:
     ld [SCORE_ONES], a  ; Show the digit on screen
     ret
 getlandercostume:
-    cp a, 32
-    ld b, 2
-    ret c
-    cp a, 96
-    ld b, 3
-    ret c
     cp a, 128
-    ld b, 4
-    ret c
-    cp a, 160
-    ld b, 0
-    ret c
-    cp a,224
-    ld b, 1
-    ret c
-    ld b, 2
+    jp nc, .isNeg
+    add a, 16
+    srl a
+    srl a
+    srl a
+    srl a
+    srl a
+    add a, 4
     ret
+.isNeg:
+    sub a, 112
+    srl a
+    srl a
+    srl a
+    srl a
+    srl a
+    ret
+CosTable:
+    db $ff
+    db $ed
+    db $b5
+    db $62
+    db $0
+    db $62;neg
+    db $b5;neg
+    db $ed;neg
+    db $ff;neg
+CosTableEnd:
+iscosneg:
+    cp a, 5
+    ld a,1
+    ret c
+    ld a, 0
+    ret
+SinTable:
+    db $0
+    db $62
+    db $b5
+    db $ed
+    db $ff
+    db $ed
+    db $b5
+    db $62
+    db $0
+SinTableEnd:
 
-
+     
 Tiles:
 ; moon surface
   ; space
@@ -348,12 +376,12 @@ Tiles:
   dw `33333333
 
   dw `33333333
-  dw `33333133
+  dw `33333033
   dw `33333333
   dw `33333333
-  dw `33133333
+  dw `33033333
   dw `33333333
-  dw `33333133
+  dw `33333033
   dw `33333333
 
   ; landing surface
