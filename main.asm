@@ -335,7 +335,42 @@ getlandercostume:
     srl a
     ret
 Thrust:
+    ld a, [wLanderAngle]
+    call getlandercostume ; this gets a value between 0 and 8 (inclusive) of costume. 4 is down.
+    ld b, a ; We are placing the costume value into b for later use for x movement.
+    ;;;;;;; do Y movement ;;;;;;
+    ld l, a ; The costume will be the offset in our sine table. Put it in l
+    ld h, $00 ; The costume is always less than 256 (also less than 9) so high value is 0.
+    ld de, SinTable ; Load the sine table into de
+    add hl, de ; Find the memory location where the sine value is.
+    ld a, [hl] ; Put the sine into a
+    srl a
+    srl a
+    srl a
+    srl a
+    srl a ; Divide a by 32
+    ld e, a ; Save a into e for later.
+
+    ; Load wLanderMomentumY into hl (destroying a)
+    ld a, [wLanderMomentumY]
+    ld l, a
+    ld a, [wLanderMomentumY+1] 
+    ld h, a 
+
+    ; Put sin / 32 is in de. The high byte is zero.
+    ld d, 0
+    ; Do a 16 bit add to add the sine / 32 to hl
+    add hl, de
+
+    ; put hl into wLanderMomentumY
+    ld a, l
+    ld [wLanderMomentumY], a
+    ld a, h
+    ld [wLanderMomentumY + 1], a
     ret
+
+
+
 CosTable:
     db $ff
     db $ed
