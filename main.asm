@@ -373,6 +373,76 @@ Thrust:
     ld [wLanderMomentumY], a
     ld a, h
     ld [wLanderMomentumY + 1], a
+    ld a, b
+    call iscosneg
+    cp a,0
+    jp z, .negitive
+
+    ld l, b ; The costume will be the offset in our sine table. Put it in l
+    ld h, $00 ; The costume is always less than 256 (also less than 9) so high value is 0.
+    ld de, CosTable ; Load the Cos table into de
+    add hl, de ; Find the memory location where the Cos value is.
+    ld a, [hl] ; Put the cos into a
+    srl a
+    srl a
+    srl a
+    srl a
+    srl a ; Divide a by 32
+    ld e, a ; Save a into e for later.
+
+    ; Load wLanderMomentumX into hl (destroying a)
+    ld a, [wLanderMomentumX]
+    ld l, a
+    ld a, [wLanderMomentumX+1] 
+    ld h, a 
+
+    ; Put cos / 32 is in de. The high byte is zero.
+    ld d, 0 ; load 0 into d and then do the complement to get $ff
+    ; Do a 16 bit add of the complement and 1 to subtract the cos / 32 from hl
+    add hl, de
+
+    ; put hl into wLanderMomentumX
+    ld a, l
+    ld [wLanderMomentumX], a
+    ld a, h
+    ld [wLanderMomentumX + 1], a
+    ret
+
+.negitive:
+    ld l, b ; The costume will be the offset in our sine table. Put it in l
+    ld h, $00 ; The costume is always less than 256 (also less than 9) so high value is 0.
+    ld de, CosTable ; Load the Cos table into de
+    add hl, de ; Find the memory location where the Cos value is.
+    ld a, [hl] ; Put the cos into a
+    srl a
+    srl a
+    srl a
+    srl a
+    srl a ; Divide a by 32
+    ld e, a ; Save a into e for later.
+
+    ; Load wLanderMomentumX into hl (destroying a)
+    ld a, [wLanderMomentumX]
+    ld l, a
+    ld a, [wLanderMomentumX+1] 
+    ld h, a 
+
+    ; Put cos / 32 is in de. The high byte is zero.
+    ld d, $ff ; load 0 into d and then do the complement to get $ff
+
+    ld a, e
+    cpl
+    ld e, a ; take the complement of e
+
+    inc de ; add one to the complement
+    ; Do a 16 bit add of the complement and 1 to subtract the cos / 32 from hl
+    add hl, de
+
+    ; put hl into wLanderMomentumX
+    ld a, l
+    ld [wLanderMomentumX], a
+    ld a, h
+    ld [wLanderMomentumX + 1], a
     ret
 
 
