@@ -81,6 +81,8 @@ ClearOam:
     ld [wLanderY+1], a
     ld a, (0)
     ld [wLanderAngle], a
+    ld a, (0)
+    ld [wFramecounter], a
 
     ; Turn the LCD on
     ld a, LCDCF_ON | LCDCF_BGON | LCDCF_OBJON
@@ -107,6 +109,9 @@ WaitVBlank2:
     cp 144
     jp c, WaitVBlank2
 
+    ld a, [wFramecounter]
+    inc a
+    ld [wFramecounter], a
     ; Add the Lander's momentum to its position in OAM.
     ld a, [wLanderMomentumX+1]
     ld c, a
@@ -121,7 +126,7 @@ WaitVBlank2:
     ld c, a
     ld [wLanderX+1], a
 
-    ; Use the de-scaled low byte as the backgrounds position
+    ; Use the de-scaled low byte as the backgrounds position+gravity
     ld a, c
     ld [_OAMRAM+1], a
     ld a, [wLanderAngle]  
@@ -134,6 +139,7 @@ WaitVBlank2:
     
     ld b, a
     ld a, [wLanderY]
+
     add a, b
     ld b, a
     ld [wLanderY], a
@@ -146,7 +152,7 @@ WaitVBlank2:
     ld a, c
     ld [_OAMRAM], a
 
-
+    call Gravity
     ; Check the current keys every frame and move left or right.
     call UpdateKeys
 
@@ -155,7 +161,7 @@ WaitVBlank2:
     ; First, check if the left button is pressed.
 CheckLeft:
     ld a, [wCurKeys]
-    and a, PADF_LEFT
+    and a, PADF_RIGHT
     jp z, CheckRight
 Left:
     ; Move the angle one unit to the left.
@@ -171,7 +177,7 @@ Left:
 ; Then check the right button.
 CheckRight:
     ld a, [wCurKeys]
-    and a, PADF_RIGHT
+    and a, PADF_LEFT
     jp z, CheckA
 Right:
     ; Move the angle one unit to the right.
@@ -271,6 +277,21 @@ GetTileByPixel:
     ; Add the offset to the tilemap's base address, and we are done!
     ld bc, $9800
     add hl, bc
+    ret
+Gravity:
+    ld a, [wFramecounter]
+    and a, 3
+    ret nz
+    ld a, [wLanderMomentumY]
+    ld l, a
+    ld a, [wLanderMomentumY+1]
+    ld h, a
+    ld bc, $01
+    add hl,bc
+    ld a, l
+    ld [wLanderMomentumY],a
+    ld a, h
+    ld [wLanderMomentumY+1],a
     ret
 
 ; @param a: tile ID
@@ -660,7 +681,7 @@ Tilemap:
 	db $00, $01, $00, $01, $02, $01, $01, $02, $00, $01, $02, $01, $00, $02, $01, $00, $01, $02, $01, $00, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $01, $01, $02, $01, $02, $01, $02, $01, $01, $01, $00, $01, $02, $02, $00, $01, $02, $00, $02, $02, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $00, $01, $00, $01, $01, $02, $00, $02, $01, $02, $01, $02, $01, $02, $01, $00, $01, $01, $01, $01, 0,0,0,0,0,0,0,0,0,0,0,0
-	db $05, $04, $04, $04, $04, $04, $04, $03, $03, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
+	db $05, $04, $04, $04, $04, $03, $03, $03, $04, $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $05, $04, $04, $04, $04, $04, $05, $04, $04, $04, $05, $04, $04, $04, $04, $04, $04, $05, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $04, $04, $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $04, $04, $04, $05, $04, $04, $04, $05, $04, $04, $05, $04, $04, $04, $04, $04, $04, $04, $04, $04, 0,0,0,0,0,0,0,0,0,0,0,0
@@ -768,3 +789,6 @@ wLanderAngle:db
 
 SECTION "Score", WRAM0
 wScore: db
+
+SECTION " Framecounter ", WRAM0
+wFramecounter: db
