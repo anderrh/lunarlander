@@ -89,6 +89,17 @@ WaitVBlank2:
     cp 144
     jp c, WaitVBlank2
 
+    
+    ld a, [wLand]
+    cp a, 1
+    jp c, endlandedadd
+    inc a
+    ld [wLand], a
+endlandedadd:
+
+    cp a,250
+    call nc, Reset
+
     ld a, [wFramecounter]
     inc a
     ld [wFramecounter], a
@@ -307,15 +318,42 @@ CheckLand:
     jp z, .IsAtSurface
     ret
 .IsAtSurface:
+    ld a, [wLanderMomentumX]
+    cp a, 128
+    jp nc, .dead
+    ld a, [wLanderMomentumX+1]
+    cp a, 0
+    jp nc, .dead
+    ld a, [wLanderMomentumY]
+    cp a, 128
+    jp nc, .dead
+    ld a, [wLanderMomentumY+1]
+    cp a, 0
+    jp nc, .dead
+    
     ;the eagle has landed (may be dead)
     ld a, 0
     ld [wLanderMomentumX], a
     ld [wLanderMomentumY], a
     ld [wLanderMomentumX+1], a
     ld [wLanderMomentumY+1], a
-    ld [wLanderAngle], a
-    ld a, 1
+    ld a, [wLand]
+    inc a
     ld [wLand], a
+    ld a, 0
+    ld [wLanderAngle], a   
+    ret
+.dead:
+    ld a, 0
+    ld [wLanderMomentumX], a
+    ld [wLanderMomentumY], a
+    ld [wLanderMomentumX+1], a
+    ld [wLanderMomentumY+1], a
+    ld a, [wLand]
+    inc a
+    ld [wLand], a
+    ld a,1
+    ld [wDead],a
     ret
 Gravity:
     ld a, [wLand]
