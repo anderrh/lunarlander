@@ -285,15 +285,28 @@ GetTileByPixel:
     add hl, bc
     ret
 CheckLand:
-    ld a, [wLanderX+1]
+    ld a, 8
     ld b, a
-    ld a, [wLanderY+1]
-    sub a, 8; to get the tile below
-    ld c, a
-    call GetTileByPixel
-    ld a, [hl]
-    call IsGroundTile
-    ret nz
+    ld a, 4
+    call IsTileGroundTileWithOffset
+    jp z, .IsAtSurface
+    ld a, 12
+    ld b, a
+    ld a, 4
+    call IsTileGroundTileWithOffset
+    jp z, .IsAtSurface
+    ld a, 8
+    ld b, a
+    ld a, 8
+    call IsTileGroundTileWithOffset
+    jp z, .IsAtSurface
+    ld a, 12
+    ld b, a
+    ld a, 8
+    call IsTileGroundTileWithOffset
+    jp z, .IsAtSurface
+    ret
+.IsAtSurface:
     ;the eagle has landed (may be dead)
     ld a, 0
     ld [wLanderMomentumX], a
@@ -326,6 +339,8 @@ Gravity:
 ; @param a: tile ID
 ; @return z: set if a is a wall.
 IsGroundTile:
+    cp a, $03
+    ret z
     cp a, $04
     ret z
     cp a, $05
@@ -341,11 +356,22 @@ IsGroundTile:
     cp a, $0a
     ret z
     cp a, $0b
-    ret z
-    cp a, $0c
     ret
 
-    
+IsTileGroundTileWithOffset:
+    ld c, a
+    ld d, b
+    ld a, [wLanderX+1]
+    sub a, c; to get the tile below
+    ld b, a
+    ld a, [wLanderY+1]
+    sub a, d; to get the tile below
+    ld c, a
+    call GetTileByPixel
+    ld a, [hl]
+    call IsGroundTile
+    ret
+
     
 
 ; Increase score by 1 and store it as a 1 byte packed BCD number
@@ -747,7 +773,7 @@ TilesEnd:
 Tilemap:
 	db $00, $00, $02, $01, $00, $00, $00, $01, $01, $02, $00, $01, $01, $02, $00, $01, $01, $02, $01, $02, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $01, $01, $02, $01, $02, $01, $02, $01, $01, $01, $00, $01, $02, $02, $00, $01, $02, $00, $02, $02, 0,0,0,0,0,0,0,0,0,0,0,0
-	db $00, $01, $00, $01, $01, $02, $00, $02, $01, $02, $01, $02, $01, $02, $01, $00, $01, $01, $01, $01, 0,0,0,0,0,0,0,0,0,0,0,0
+	db $00, $01, $00, $01, $01, $02, $00, $02, $01, $02, $01, $00, $01, $02, $01, $00, $01, $01, $01, $01, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $02, $01, $02, $00, $02, $02, $02, $01, $01, $00, $02, $00, $02, $01, $01, $01, $02, $01, $00, $00, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $01, $00, $01, $02, $01, $02, $00, $02, $01, $02, $01, $01, $01, $02, $02, $01, $00, $01, $00, $01, 0,0,0,0,0,0,0,0,0,0,0,0
 	db $01, $01, $02, $01, $02, $00, $02, $01, $02, $00, $02, $02, $02, $01, $00, $02, $02, $00, $01, $02, 0,0,0,0,0,0,0,0,0,0,0,0
