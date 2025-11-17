@@ -348,6 +348,7 @@ Thrust:
     srl a
     srl a
     srl a
+    srl a
     srl a ; Divide a by 32
     ld e, a ; Save a into e for later.
 
@@ -387,6 +388,7 @@ Thrust:
     srl a
     srl a
     srl a
+    srl a
     srl a ; Divide a by 32
     ld e, a ; Save a into e for later.
 
@@ -414,6 +416,7 @@ Thrust:
     ld de, CosTable ; Load the Cos table into de
     add hl, de ; Find the memory location where the Cos value is.
     ld a, [hl] ; Put the cos into a
+    srl a
     srl a
     srl a
     srl a
