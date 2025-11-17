@@ -62,27 +62,7 @@ ClearOam:
     ld a, 0
     ld [hli], a
 
-    ; The Lander starts out going up and to the right
-    ld a, 0
-    ld [wLanderMomentumX], a
-    ld a, 0
-    ld [wLanderMomentumY], a
-    ld a, 0 ; -1 if going left, 0 if going right
-    ld [wLanderMomentumX+1], a
-    ld a, 0 ; -1 if going left, 0 if going right
-    ld [wLanderMomentumY+1], a
-    ld a, (0)
-    ld [wLanderX], a
-    ld a, (60)
-    ld [wLanderX+1], a
-    ld a, (0)
-    ld [wLanderY], a
-    ld a, (32)
-    ld [wLanderY+1], a
-    ld a, (0)
-    ld [wLanderAngle], a
-    ld a, (0)
-    ld [wFramecounter], a
+    call Reset ;resets the lander
 
     ; Turn the LCD on
     ld a, LCDCF_ON | LCDCF_BGON | LCDCF_OBJON
@@ -196,7 +176,33 @@ CheckA:
     call Thrust
     Aend:
     jp Main
-
+Reset:
+; The Lander starts out going up and to the right
+    ld a, 0
+    ld [wLanderMomentumX], a
+    ld a, 0
+    ld [wLanderMomentumY], a
+    ld a, 0 ; -1 if going left, 0 if going right
+    ld [wLanderMomentumX+1], a
+    ld a, 0 ; -1 if going left, 0 if going right
+    ld [wLanderMomentumY+1], a
+    ld a, (0)
+    ld [wLanderX], a
+    ld a, (60)
+    ld [wLanderX+1], a
+    ld a, (0)
+    ld [wLanderY], a
+    ld a, (32)
+    ld [wLanderY+1], a
+    ld a, (0)
+    ld [wLanderAngle], a
+    ld a, (0)
+    ld [wFramecounter], a
+    ld a, (0)
+    ld [wLand], a
+    ld a, (0)
+    ld [wDead], a
+    ret
 ; Copy bytes from one area to another.
 ; @param de: Source
 ; @param hl: Destination
@@ -296,13 +302,8 @@ Gravity:
 
 ; @param a: tile ID
 ; @return z: set if a is a wall.
-IsWallTile:
-    cp a, $00
-    ret z
-    cp a, $01
-    ret z
-    cp a, $02
-    ret z
+IsGroundTile:
+    ld a, l 
     cp a, $04
     ret z
     cp a, $05
@@ -310,7 +311,20 @@ IsWallTile:
     cp a, $06
     ret z
     cp a, $07
+    ret z
+    cp a, $08
+    ret z
+    cp a, $09
+    ret z
+    cp a, $0a
+    ret z
+    cp a, $0b
+    ret z
+    cp a, $0c
     ret
+
+    
+    
 
 ; Increase score by 1 and store it as a 1 byte packed BCD number
 ; changes A and HL
@@ -602,7 +616,6 @@ Tiles:
   dw `11133333
   dw `11113333
   dw `11113333
-
   dw `11111333
   dw `11111333
   dw `11111133
@@ -809,8 +822,18 @@ Lander:
     dw `01111011
     dw `00110001
 
-LanderEnd:
+    dw `00000000
+    dw `00222200
+    dw `02233220
+    dw `02333320
+    dw `02333320
+    dw `02233220
+    dw `00222200
+    dw `00000000
 
+    
+
+LanderEnd:
 
 SECTION "Input Variables", WRAM0
 wCurKeys: db
@@ -822,6 +845,8 @@ wLanderMomentumY: dw
 wLanderX: dw
 wLanderY: dw
 wLanderAngle:db
+wDead:db
+wLand:db
 
 SECTION "Score", WRAM0
 wScore: db
