@@ -131,7 +131,7 @@ WaitVBlank2:
     ; Use the de-scaled low byte as the backgrounds position
     ld a, c
     ld [_OAMRAM], a
-
+    call CheckLand
     call Gravity
     ; Check the current keys every frame and move left or right.
     call UpdateKeys
@@ -284,7 +284,30 @@ GetTileByPixel:
     ld bc, $9800
     add hl, bc
     ret
+CheckLand:
+    ld a, [wLanderX+1]
+    ld b, a
+    ld a, [wLanderY+1]
+    sub a, 8; to get the tile below
+    ld c, a
+    call GetTileByPixel
+    ld a, [hl]
+    call IsGroundTile
+    ret nz
+    ;the eagle has landed (may be dead)
+    ld a, 0
+    ld [wLanderMomentumX], a
+    ld [wLanderMomentumY], a
+    ld [wLanderMomentumX+1], a
+    ld [wLanderMomentumY+1], a
+    ld [wLanderAngle], a
+    ld a, 1
+    ld [wLand], a
+    ret
 Gravity:
+    ld a, [wLand]
+    cp a, 1
+    ret z
     ld a, [wFramecounter]
     and a, 3
     ret nz
@@ -303,7 +326,6 @@ Gravity:
 ; @param a: tile ID
 ; @return z: set if a is a wall.
 IsGroundTile:
-    ld a, l 
     cp a, $04
     ret z
     cp a, $05
@@ -370,6 +392,9 @@ getlandercostume:
     srl a
     ret
 Thrust:
+    ld a, [wLand]
+    cp a, 1
+    ret z
     ld a, [wLanderAngle]
     call getlandercostume ; this gets a value between 0 and 8 (inclusive) of costume. 4 is down.
     ld b, a ; We are placing the costume value into b for later use for x movement.
