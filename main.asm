@@ -2,7 +2,7 @@ INCLUDE "hardware.inc"
 
 DEF BRICK_LEFT EQU $05
 DEF BRICK_RIGHT EQU $06
-DEF DIGIT_OFFSET EQU $1A
+DEF DIGIT_OFFSET EQU $c
 DEF BLANK_TILE EQU $08
 DEF SCORE_TENS   EQU $9870
 DEF SCORE_ONES   EQU $9871
@@ -318,26 +318,32 @@ CheckLand:
     jp z, .IsAtSurface
     ret
 .IsAtSurface:
+    
     ld a, [wLanderMomentumX]
-    cp a, 128
+    cp a, 48
     jp nc, .dead
     ld a, [wLanderMomentumX+1]
-    cp a, 0
+    cp a, 1
     jp nc, .dead
     ld a, [wLanderMomentumY]
-    cp a, 128
+    cp a, 64
     jp nc, .dead
     ld a, [wLanderMomentumY+1]
-    cp a, 0
+    cp a, 1
     jp nc, .dead
     
-    ;the eagle has landed (may be dead)
+    
+    ;the eagle has landed
+    
     ld a, 0
     ld [wLanderMomentumX], a
     ld [wLanderMomentumY], a
     ld [wLanderMomentumX+1], a
     ld [wLanderMomentumY+1], a
     ld a, [wLand]
+    cp a,0
+
+    call z, IncreaseScorePackedBCD
     inc a
     ld [wLand], a
     ld a, 0
